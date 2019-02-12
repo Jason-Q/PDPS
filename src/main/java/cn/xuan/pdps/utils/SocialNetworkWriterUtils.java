@@ -8,7 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Set;
 
-public class FileWriterUtils {
+public class SocialNetworkWriterUtils {
     public static void write(SocialNetwork network, String path) throws IOException {
         Set<Edge> edges = network.getAllEdges();
         BufferedWriter writer = new BufferedWriter(new FileWriter(path));

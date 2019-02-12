@@ -57,6 +57,21 @@ public class SocialNetwork {
         addDirectedEdge(edge[1], edge[0]);
     }
 
+    public Set<Edge> getEdges(Set<String> nodes) {
+        Set<Edge> result = new HashSet<>();
+        for (String fromNode : nodes) {
+            List<String> toNodes = this.edges.get(fromNode);
+            for (int i = 0; i < toNodes.size(); i++) {
+                String toNode = toNodes.get(i);
+                if (isDirected()) {
+                    result.add(new DirectedEdge(fromNode, toNode));
+                } else {
+                    result.add(new UndirectedEdge(fromNode, toNode));
+                }
+            }
+        }
+        return result;
+    }
     public Set<Edge> getAllEdges() {
         Set<Edge> edges = new HashSet<>();
         boolean directed = this.isDirected();

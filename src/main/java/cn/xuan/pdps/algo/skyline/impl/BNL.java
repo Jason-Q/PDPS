@@ -30,6 +30,8 @@ public class BNL extends AbstractSkylineQuery {
                     }
                 }
             }
+            result.add(skylineCache);
+            points = restPoints;
         }
         return result;
     }
