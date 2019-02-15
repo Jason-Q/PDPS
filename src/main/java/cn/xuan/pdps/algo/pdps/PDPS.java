@@ -5,29 +5,58 @@ import cn.xuan.pdps.model.SocialNetwork;
 import cn.xuan.pdps.model.edge.Edge;
 import cn.xuan.pdps.model.edge.UndirectedEdge;
 import cn.xuan.pdps.model.edge.UndirectedEdgePro;
-import cn.xuan.pdps.utils.Network2GraphUtils;
-import com.sun.xml.internal.bind.v2.model.core.ID;
-import org.apache.commons.math.ode.sampling.StepInterpolator;
 
+import java.io.File;
 import java.util.*;
 
+/**
+ * PDPS 算法
+ */
 public class PDPS {
+    /**
+     * 社交网络
+     */
     private SocialNetwork network;
-    
+
+    /**
+     * 网络节点的特征向量，String表示节点，List<Double>标识特征向量
+     */
     private Map<String, List<Double>> featureVector;
-    
+
+    /**
+     * 节点隐私泄露等级，splitedNetwork.ger(0)表示隐私泄露等级为1的节点集合
+     */
     private List<Set<Edge>> splitedNetwork;
-    
+
+    /**
+     * 采样边的集合，即删除的边的集合
+     */
     private Set<Edge> deletedEdges;
-    
+
+    /**
+     * 剩余边的集合，即原网络边集合 - 采样边集合
+     */
     private Set<Edge> restEdges;
-    
+
+    /**
+     * 生成边的集合，噪音边
+     */
     private Set<Edge> generatedEdges;
+
+    /**
+     * 加噪图文件
+     */
+    private File dstFile;
 
     public PDPS(SocialNetwork network) {
         this.network = network;
     }
 
+    /**
+     * 获取原始网络的所有边,
+     * @see SocialNetwork#getEdges()
+     * @return
+     */
     public Set<Edge> getOriginalNetwork() {
         if (null == network) {
             return null;
@@ -55,6 +84,12 @@ public class PDPS {
         return generatedEdges;
     }
 
+    /**
+     * 运行pdps算法，并将加噪图保存在文件中
+     * @param k 隐私泄露等级划分参数
+     * @param threshold 边采样参数
+     * @throws Exception
+     */
     public void run(int k, double threshold) throws Exception {
         featureVector = calFeatureVector();
 
@@ -81,16 +116,28 @@ public class PDPS {
         int deletedEdgesSize = deletedEdges.size();
 
         generatedEdges = generateEdges(deletedEdgesSize, deletedEdges);
+
+        //todo: 加噪图保存在文件中
     }
 
+    /**
+     * 计算PDPS算法的缺失率
+     * @return 数据缺失率
+     * @throws Exception
+     */
     public double calMissRate() throws Exception {
         if (deletedEdges == null) {
-            throw new Exception("MEIYOU YUNXING");
+            throw new Exception("Not run algotithm PDPS");
         }
 
         return restEdges.size() / (restEdges.size() + deletedEdges.size());
     }
 
+    /**
+     * 计算网络中所有节点的特征向量(CF1, CD2, P, T)
+     * @return
+     * @throws Exception
+     */
     private Map<String, List<Double>> calFeatureVector() throws Exception {
         Map<String, List<Double>> featureVector = new HashMap<>();
         int vnum = network.getEdges().size();
@@ -132,11 +179,23 @@ public class PDPS {
         }
     }
 
+    /**
+     * 依据所有节点的特征向量，计算skyline(即隐私泄露等级)
+     * @param points skyline层级
+     * @return
+     */
     private List<Map<String, List<Double>>> skyline(Map<String, List<Double>> points) {
         BNL bnl = new BNL();
         return bnl.skylineQuery(points);
     }
 
+    /**
+     * 将隐私泄露等级划分为k个等级，每个等级的个数为
+     * (privateLevel.size/k, privateLevel.size/k,...,privateLevel.size/k+privateLevel.size%k)
+     * @param k 隐私泄露等级个数
+     * @param privateLevel 原有的隐私泄露等级
+     * @return 新的隐私泄露等级
+     */
     private List<Map<String, List<Double>>> cast2KDiem(int k, List<Map<String, List<Double>>> privateLevel) {
         List<Map<String, List<Double>>> result = new ArrayList<>();
 
@@ -158,6 +217,15 @@ public class PDPS {
         return result;
     }
 
+    /**
+     * 计算每条边被采样的概率，其中一条边有可能出现在多个隐私泄露等级中。
+     * 例如，边(e1, e2)，其中e1隐私泄露等级为1，e2的隐私泄露等级为2，则边(e1, e2)
+     * 会出现在隐私等级为1与2中。其中隐私泄露等级对应List的index，边的采
+     * 样概率存储在UndirectedEdgePro
+     * @param newLevel 隐私泄露等级
+     * @param threshold 采样概率阈值
+     * @return 每条边对应的隐私泄露等级及被采样的概率
+     */
     private List<Set<UndirectedEdgePro>> calEdgePro(List<Map<String, List<Double>>> newLevel, double threshold) {
         List<Set<UndirectedEdgePro>> result = new ArrayList<>();
         for (int i = 0; i < newLevel.size(); i++) {
@@ -180,6 +248,11 @@ public class PDPS {
         return result;
     }
 
+    /**
+     * 按照边的采样概率每个隐私泄露等级中的边升序排序
+     * @param edgesPro 每条边的额采样概率
+     * @return 排序后的边的采样概率
+     */
     private List<List<UndirectedEdgePro>> sortEdgesProWithPro(List<Set<UndirectedEdgePro>> edgesPro) {
         List<List<UndirectedEdgePro>> result = new ArrayList<>();
         for (int i = 0; i < edgesPro.size(); i++) {
@@ -202,6 +275,12 @@ public class PDPS {
         return result;
     }
 
+    /**
+     * 边采样，即删除容易泄露隐私的边
+     * @param sortedEdgesPro
+     * @param k
+     * @return 被采样(删除)的边
+     */
     private Set<Edge> sampleEdges(List<List<UndirectedEdgePro>> sortedEdgesPro, int k) {
         Set<Edge> result = new HashSet<>();
         double percentage = 0.9;
@@ -215,6 +294,12 @@ public class PDPS {
         return result;
     }
 
+    /**
+     * 生成随机边
+     * @param generatedSize 要生成的边的数量
+     * @param deletedEdges
+     * @return 生成的随即边
+     */
     private Set<Edge> generateEdges(int generatedSize, Set<Edge> deletedEdges) {
         Set<Edge> result = new HashSet<>();
         Set<String> nodes = network.getEdges().keySet();

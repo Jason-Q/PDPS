@@ -6,10 +6,23 @@ import java.io.File;
 import java.io.FileReader;
 
 public class SocialNetworkReaderUtils {
+    /**
+     * 通过文件构建社交网络，各个节点的pvalue随机生成
+     * @param file
+     * @return
+     * @throws Exception
+     */
     public static SocialNetwork constructSocialNetworkFromFile(File file) throws Exception {
         return constructSocialNetworkFromFile(file, null);
     }
 
+    /**
+     * 通过文件构建社交网络，各个节点的pvalue通过文件指定，文件格式为  节点 pvalue
+     * @param file
+     * @param pvalueFilePath
+     * @return
+     * @throws Exception
+     */
     public static SocialNetwork constructSocialNetworkFromFile(File file, String pvalueFilePath) throws Exception {
         SocialNetwork network = new SocialNetwork();
         if (file.isFile()) {
