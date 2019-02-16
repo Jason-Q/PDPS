@@ -5,8 +5,10 @@ import cn.xuan.pdps.model.SocialNetwork;
 import cn.xuan.pdps.model.edge.Edge;
 import cn.xuan.pdps.model.edge.UndirectedEdge;
 import cn.xuan.pdps.model.edge.UndirectedEdgePro;
+import cn.xuan.pdps.utils.SocialNetworkWriterUtils;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -64,6 +66,17 @@ public class PDPS {
         return network.getAllEdges();
     }
 
+    /**
+     * 获取原始图的邻接表标识
+     * @return
+     */
+    public Map<String, List<String>> getAdjaListNetwork() {
+        if (null == network) {
+            return null;
+        }
+        return network.getEdges();
+    }
+
     public Map<String, List<Double>> getFeatureVector() {
         return featureVector;
     }
@@ -78,6 +91,10 @@ public class PDPS {
 
     public Set<Edge> getRestEdges() {
         return restEdges;
+    }
+
+    public File getDstFile() {
+        return dstFile;
     }
 
     public Set<Edge> getGeneratedEdges() {
@@ -117,7 +134,10 @@ public class PDPS {
 
         generatedEdges = generateEdges(deletedEdgesSize, deletedEdges);
 
-        //todo: 加噪图保存在文件中
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+        String dateString = dateFormat.format(new Date());
+        dstFile = new File("out/dstFile" + dateString + ".txt");
+        SocialNetworkWriterUtils.write(dstFile, generatedEdges, restEdges);
     }
 
     /**

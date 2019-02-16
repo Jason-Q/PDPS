@@ -35,6 +35,7 @@ public class SocialNetwork {
         this.edges = edges;
     }
 
+    // TODO: 优化，与Edge2NetworkUtils中的方法相似
     public void addDirectedEdge(String fromNode, String endNode) {
         if (edges == null) {
             edges = new HashMap<String, List<String>>();

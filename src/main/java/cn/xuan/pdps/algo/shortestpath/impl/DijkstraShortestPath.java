@@ -1,14 +1,11 @@
 package cn.xuan.pdps.algo.shortestpath.impl;
 
-import cn.xuan.pdps.algo.shortestpath.ShortestPath;
-import org.junit.internal.runners.statements.FailOnTimeout;
+import cn.xuan.pdps.algo.shortestpath.AbstractShortestPath;
+import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-public class DijkstraShortestPath implements ShortestPath {
+public class DijkstraShortestPath extends AbstractShortestPath {
     @Override
     public Map<String, Map<String, Integer>> shortestPathAnyVerticles(Map<String, List<String>> network) {
         Map<String, Map<String, Integer>> result = new HashMap<>();
@@ -22,7 +19,7 @@ public class DijkstraShortestPath implements ShortestPath {
     }
 
     @Override
-    public Map<String, Integer> shortestPathGivenVerticle(Map<String, List<String>> network, String from) {
+    public Map<String, Integer> shortestPathGivenVerticle(final Map<String, List<String>> network, String from) {
         Map<String, Integer> result = new HashMap<>();
 
         Map<String, Integer> path = new HashMap<>();
@@ -39,9 +36,12 @@ public class DijkstraShortestPath implements ShortestPath {
             }
 
             if (path.size() == 0) {
-                Set<String> restV = network.keySet();
+                Set<String> keySet = network.keySet();
+                Set<String> restV = new HashSet<>();
+                restV.addAll(keySet);
                 restV.removeAll(result.keySet());
                 for (String vert : restV) {
+                    System.out.println(from + "," + vert);
                     result.put(vert, Integer.MAX_VALUE);
                 }
                 break;
@@ -59,5 +59,41 @@ public class DijkstraShortestPath implements ShortestPath {
             }
         }
         return result;
+    }
+
+    @Test
+    public void dijkstraTest() {
+        Map<String, List<String>> network = new HashMap<>();
+        String one = "1";
+        String two = "2";
+        String three = "3";
+        String four = "4";
+        String five = "5";
+
+        List<String> ones = new ArrayList<>();
+        ones.add(two);
+        ones.add(three);
+        network.put(one, ones);
+
+        List<String> twos = new ArrayList<>();
+        twos.add(four);
+        twos.add(three);
+        network.put(two, twos);
+
+        List<String> threes = new ArrayList<>();
+        threes.add(two);
+        network.put(three, threes);
+
+        List<String> fours = new ArrayList<>();
+        fours.add(five);
+        network.put(four, fours);
+
+        List<String> fives = new ArrayList<>();
+        network.put(five, fives);
+
+        Map<String, Map<String, Integer>> result = new DijkstraShortestPath().shortestPathAnyVerticles(network);
+
+        System.out.println();
+
     }
 }
